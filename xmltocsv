@@ -1,0 +1,60 @@
+// src/XMLToCSVViewer.js
+import React, { useState } from 'react';
+
+function XMLToCSVViewer() {
+    const [data, setData] = useState([]);
+    const [file, setFile] = useState(null);
+
+    const handleChange = (event) => {
+        setFile(event.target.files[0]);
+    };
+
+    const handleUpload = () => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+
+            // Assuming root children represent rows and tags represent column headers
+            const rows = Array.from(xmlDoc.documentElement.children);
+            const headers = Array.from(rows[0].children).map(el => el.nodeName);
+
+            const parsedData = rows.map(row => {
+                const values = headers.map(header => row.getElementsByTagName(header)[0].textContent);
+                return Object.fromEntries(values.map((value, idx) => [headers[idx], value]));
+            });
+
+            setData(parsedData);
+        };
+
+        reader.readAsText(file);
+    };
+
+    return (
+        <div>
+            <input type="file" onChange={handleChange} />
+            <button onClick={handleUpload}>Upload and Parse XML</button>
+            <table>
+                <thead>
+                    <tr>
+                        {data[0] && Object.keys(data[0]).map(header => (
+                            <th key={header}>{header}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((row, idx) => (
+                        <tr key={idx}>
+                            {Object.values(row).map((value, i) => (
+                                <td key={i}>{value}</td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+export default XMLToCSVViewer;
