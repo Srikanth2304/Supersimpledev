@@ -1,0 +1,63 @@
+import React, { useState } from 'react';
+import { Button, Input, Table, TableBody, TableCell, TableHead, TableRow, Paper } from '@mui/material';
+
+function XMLToCSVViewer() {
+    const [data, setData] = useState([]);
+    const [file, setFile] = useState(null);
+
+    const handleChange = (event) => {
+        setFile(event.target.files[0]);
+    };
+
+    const handleUpload = () => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+
+            const rows = Array.from(xmlDoc.documentElement.children);
+            const headers = Array.from(rows[0].children).map(el => el.nodeName);
+
+            const parsedData = rows.map(row => {
+                const values = headers.map(header => row.getElementsByTagName(header)[0].textContent);
+                return Object.fromEntries(values.map((value, idx) => [headers[idx], value]));
+            });
+
+            setData(parsedData);
+        };
+
+        reader.readAsText(file);
+    };
+
+    return (
+        <div>
+            <Input type="file" onChange={handleChange} />
+            <Button variant="contained" color="primary" onClick={handleUpload}>
+                Upload and Parse XML
+            </Button>
+            <Paper elevation={3} style={{ marginTop: '16px' }}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            {data[0] && Object.keys(data[0]).map(header => (
+                                <TableCell key={header}>{header}</TableCell>
+                            ))}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {data.map((row, idx) => (
+                            <TableRow key={idx}>
+                                {Object.values(row).map((value, i) => (
+                                    <TableCell key={i}>{value}</TableCell>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </Paper>
+        </div>
+    );
+}
+
+export default XMLToCSVViewer;
