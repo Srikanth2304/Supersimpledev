@@ -1,60 +1,41 @@
-// src/XMLToCSVViewer.js
 import React, { useState } from 'react';
+import axios from 'axios';
 
-function XMLToCSVViewer() {
-    const [data, setData] = useState([]);
-    const [file, setFile] = useState(null);
+function ResetPassword() {
+    const [email, setEmail] = useState(''); // for sending the email to the backend
+    const [message, setMessage] = useState(''); // to show feedback to the user
 
-    const handleChange = (event) => {
-        setFile(event.target.files[0]);
-    };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    const handleUpload = () => {
-        const reader = new FileReader();
+        try {
+            const response = await axios.post('https://your-backend-url/reset-password', { email });
 
-        reader.onload = (e) => {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+            // Handle successful response (You might get a message from the backend or just use a default one)
+            setMessage(response.data.message || 'Reset password link has been sent to your email!');
 
-            // Assuming root children represent rows and tags represent column headers
-            const rows = Array.from(xmlDoc.documentElement.children);
-            const headers = Array.from(rows[0].children).map(el => el.nodeName);
-
-            const parsedData = rows.map(row => {
-                const values = headers.map(header => row.getElementsByTagName(header)[0].textContent);
-                return Object.fromEntries(values.map((value, idx) => [headers[idx], value]));
-            });
-
-            setData(parsedData);
-        };
-
-        reader.readAsText(file);
+        } catch (error) {
+            // Handle error (you might get a detailed error message from the backend)
+            setMessage(error.response?.data?.message || 'Something went wrong!');
+        }
     };
 
     return (
         <div>
-            <input type="file" onChange={handleChange} />
-            <button onClick={handleUpload}>Upload and Parse XML</button>
-            <table>
-                <thead>
-                    <tr>
-                        {data[0] && Object.keys(data[0]).map(header => (
-                            <th key={header}>{header}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {data.map((row, idx) => (
-                        <tr key={idx}>
-                            {Object.values(row).map((value, i) => (
-                                <td key={i}>{value}</td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <h2>Reset Password</h2>
+            <form onSubmit={handleSubmit}>
+                <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="Enter your email"
+                    required 
+                />
+                <button type="submit">Send Reset Link</button>
+            </form>
+            {message && <p>{message}</p>}
         </div>
     );
 }
 
-export default XMLToCSVViewer;
+export default ResetPassword;
